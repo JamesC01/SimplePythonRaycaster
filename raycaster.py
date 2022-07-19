@@ -11,13 +11,13 @@ from pygame import Vector2
 import opensimplex
 
 # Size of the raycaster surface
-RAYCAST_WIDTH = 320
-RAYCAST_HEIGHT = 240
+RAYCAST_WIDTH = 640
+RAYCAST_HEIGHT = 480
 RAYCAST_HALF_WIDTH = int(RAYCAST_WIDTH/2)
 RAYCAST_HALF_HEIGHT = int(RAYCAST_HEIGHT/2)
 
 class Player:
-    FOV = 60
+    FOV = 70
     HALF_FOV = FOV/2
     SPEED = 4
     ROTATE_SPEED = 180
@@ -79,7 +79,7 @@ class Player:
 
 map = []
 
-increment_angle = Player.FOV / RAYCAST_HEIGHT
+ray_angle_increment = Player.FOV / RAYCAST_WIDTH
 precision = 0.1 # ray increment amount
 
 def generate_map(map_size, noise_scale):
@@ -162,7 +162,7 @@ def raycast(brightness=0.6):
         color = tuple(min(base_color[i], max(0, v)) for i, v in enumerate(lit_color)) # clamp between 0 and the corrosponding base_color value
 
         pygame.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
-        ray_angle += increment_angle
+        ray_angle += ray_angle_increment
 
 def render_2d(surface):
     # TODO: because colour values are being doubled, colour can't exceed 255/2. Fix this
