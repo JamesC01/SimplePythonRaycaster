@@ -229,7 +229,9 @@ while True:
         render_minimap(minimap_surf)
         screen.blit(pygame.transform.scale(minimap_surf, (300, 300)), (0, 0))
 
-
+    crosshair_surf = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+    pygame.draw.circle(crosshair_surf, pygame.Color(255, 255, 255, 70), (screen.get_width()/2, screen.get_height()/2), 5, )
+    screen.blit(crosshair_surf, (0,0))
     pygame.display.flip()
     
     delta_time = pygame.time.get_ticks()/1000 - loop_start_time
