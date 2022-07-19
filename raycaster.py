@@ -45,11 +45,18 @@ class Player:
             if self.game_map[int(dest.x)][int(dest.y)] == 0:
                     self.pos = dest
 
-        # Rotate
-        if keys[pygame.K_LEFT]:
-            self.angle -= Player.ROTATE_SPEED * delta
-        if keys[pygame.K_RIGHT]:
-            self.angle += Player.ROTATE_SPEED * delta
+        if keys[pygame.K_LALT] or keys[pygame.K_RALT]:
+            # Strafe
+            if keys[pygame.K_LEFT]:
+                self.pos -= -Vector2(angle_xy.y, -angle_xy.x) * Player.SPEED * delta
+            if keys[pygame.K_RIGHT]:
+                self.pos += -Vector2(angle_xy.y, -angle_xy.x) * Player.SPEED * delta
+        else:
+             # Rotate
+            if keys[pygame.K_LEFT]:
+                self.angle -= Player.ROTATE_SPEED * delta
+            if keys[pygame.K_RIGHT]:
+                self.angle += Player.ROTATE_SPEED * delta
 
         # Reposition (not working)
         if keys[pygame.K_r]:
@@ -59,7 +66,7 @@ class Player:
             ray = self.pos.copy()
             wall = 0
             while wall == 0:
-                ray += angle_xy * precision
+                ray += angle_xy * ray_precision
                 wall = self.game_map[int(ray.x)][int(ray.y)]
             if wall == 2:
                 self.game_map[int(ray.x)][int(ray.y)] = 0
@@ -80,7 +87,7 @@ class Player:
 map = []
 
 ray_angle_increment = Player.FOV / RAYCAST_WIDTH
-precision = 0.1 # ray increment amount
+ray_precision = 0.1 # ray increment amount
 
 def generate_map(map_size, noise_scale):
     """Generates a 2d list of map_size width and height using simplex noise.
@@ -144,7 +151,7 @@ def raycast(brightness=0.6):
         # pretty cool bug.
         wall = 0
         while(wall == 0):
-            ray_pos += ray_dir * precision
+            ray_pos += ray_dir * ray_precision
             wall = map[int(ray_pos.x)][int(ray_pos.y)]
 
         ray_length_xy = player.pos - ray_pos
@@ -195,7 +202,6 @@ screen = pygame.display.set_mode((1280, 960))
 
 player = Player(map)
 
-
 generate_map(100, 0.2)
 
 show_minimap = True
@@ -205,6 +211,10 @@ show_minimap = True
 #       colours. Also, just generally polish the code a bit.
 
 delta_time = pygame.time.get_ticks()/1000
+
+font = pygame.font.Font(None, 32)
+
+MINIMAP_SIZE = 300
 
 while True:
     loop_start_time = pygame.time.get_ticks()/1000
@@ -225,13 +235,21 @@ while True:
     screen.blit(pygame.transform.scale(raycast_surface, (screen.get_width(), screen.get_height())), (0, 0))
     
     if show_minimap:
+        # Render minimap
         minimap_surf = pygame.Surface((100, 100))
         render_minimap(minimap_surf)
-        screen.blit(pygame.transform.scale(minimap_surf, (300, 300)), (0, 0))
+        screen.blit(pygame.transform.scale(minimap_surf, (MINIMAP_SIZE, MINIMAP_SIZE)), (0, 0))
+        
+        # Also render FPS
+        fps_text = font.render(f'FPS: {int(1/delta_time)}', False, (255, 255, 255))
+        screen.blit(fps_text, (0, MINIMAP_SIZE))
 
+    # Render crosshair
     crosshair_surf = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
     pygame.draw.circle(crosshair_surf, pygame.Color(255, 255, 255, 70), (screen.get_width()/2, screen.get_height()/2), 5, )
     screen.blit(crosshair_surf, (0,0))
-    pygame.display.flip()
     
+    pygame.display.flip()
+
     delta_time = pygame.time.get_ticks()/1000 - loop_start_time
+    print('FPS:', int(1/delta_time))
