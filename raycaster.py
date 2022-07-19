@@ -114,6 +114,8 @@ screen = pygame.display.set_mode((1280, 960))
 
 player = Player()
 
+# TODO add toggleable top down view
+
 while True:
     loop_start_time = pygame.time.get_ticks()/1000
 
