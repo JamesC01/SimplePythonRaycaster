@@ -1,5 +1,5 @@
 # SimplePythonRaycaster
-A simple raycaster implemented in Python using PyGame. The map is randomly generated using simplex noise and the walls can be destroyed.
+A simple raycaster implemented in Python using PyGame. The map is randomly generated using simplex noise, and the walls can be destroyed.
 
 ## Controls
 * __Up__ and __down__ move you forward and back
