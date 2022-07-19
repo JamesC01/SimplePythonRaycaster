@@ -1,4 +1,4 @@
-# A simple pygame raycaster made on 19/07/2022 by James Czekaj
+# A simple pygame raycaster started on 19/07/2022 by James Czekaj
 # I enjoyed making this. I used my previous experience from the lodev tutorial, and now a more
 # simple tutorial here: https://github.com/vinibiavatti1/RayCastingTutorial
 # I simplified some things in that tutorial, and now I believe I finally fully understand how
