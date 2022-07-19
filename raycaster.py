@@ -1,4 +1,9 @@
-import random
+# A simple pygame raycaster made on 19/07/2022 by James Czekaj
+# I enjoyed making this. I used my previous experience from the lodev tutorial, and now a more
+# simple tutorial here: https://github.com/vinibiavatti1/RayCastingTutorial
+# I simplified some things in that tutorial, and now I believe I finally fully understand how
+# a raycaster works. No mystery.
+
 import pygame, sys, math
 from pygame import Vector2
 
@@ -30,11 +35,11 @@ class Player:
 
         if keys[pygame.K_UP]:
             dest = Player.pos + angle_vec * Player.SPEED
-            if map[int(dest.y)][int(dest.x)] == 0:
+            if map[int(dest.x)][int(dest.y)] == 0:
                 Player.pos = dest
         if keys[pygame.K_DOWN]:
             dest = Player.pos - angle_vec * Player.SPEED
-            if map[int(dest.y)][int(dest.x)] == 0:
+            if map[int(dest.x)][int(dest.y)] == 0:
                     Player.pos = dest
         if keys[pygame.K_LEFT]:
             Player.angle -= Player.ROT_SPEED
@@ -47,7 +52,7 @@ screen_size = (320, 240)
 screen_half_size = (screen_size[0]/2, screen_size[1]/2)
 
 increment_angle = Player.fov / screen_size[1]
-precision = 10
+precision = 0.1
 
 map = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -70,27 +75,33 @@ def raycasting():
     for x in range(0, screen_size[0]):
         ray = Player.pos.copy()
 
-        # Ray path incrementers
-        rayIncrement = Vector2(math.cos(math.radians(rayAngle)) / precision,
-                         math.sin(math.radians(rayAngle)) / precision)
+        # Ray direction vector
+        rayDir = Vector2(math.cos(math.radians(rayAngle)),
+                         math.sin(math.radians(rayAngle))).normalize()
         
         # Wall finder
         wall = 0;
         while(wall == 0):
-            ray += rayIncrement
-            wall = map[math.floor(ray.y)][math.floor(ray.x)]
+            ray += rayDir * precision
+            wall = map[math.floor(ray.x)][math.floor(ray.y)]
 
-        # Pythagoras theorem
-        distance = math.sqrt(math.pow(Player.pos.x - ray.x, 2) + math.pow(Player.pos.y - ray.y, 2))
+        difference = Player.pos - ray
+        distance = difference.length()
 
         # Fish eye fix
         #distance = distance * math.cos(math.radians(rayAngle - Player.angle));
 
         # Wall height
-        wallHeight = math.floor(screen_size[1] / distance)
+        wallHeight = math.floor(screen_size[1] / distance) * 0.5
+
+        color = 255/distance
+        if color < 0:
+            color = 0
+        if color > 255:
+            color = 255
 
         # Draw
-        pygame.draw.line(raycast_surface, (random.randrange(255), random.randrange(255), random.randrange(255)), (x, screen_half_size[1] - wallHeight), (x, screen_half_size[1] + wallHeight))
+        pygame.draw.line(raycast_surface, (color*1.0, color*0.1, color*0.1), (x, screen_half_size[1] - wallHeight), (x, screen_half_size[1] + wallHeight))
 
         # Increment
         rayAngle += increment_angle
