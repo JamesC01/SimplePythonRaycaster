@@ -1,5 +1,5 @@
 # SimplePythonRaycaster
-A simple raycaster implemented in Python using PyGame. Requires PyGame to be installed.
+A simple raycaster implemented in Python using PyGame. Uses opensimplex to randomly generate grid cells. Requires PyGame and opensimplex to be installed.
 
 ## Controls
 * Up and down array move you forward and back
