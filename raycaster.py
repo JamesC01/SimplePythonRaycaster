@@ -43,14 +43,13 @@ def raycasting():
         ray = Vector2(Player.x, Player.y)
 
         # Ray path incrementers
-        rayCos = math.cos(math.radians(rayAngle)) / precision
-        raySin = math.sin(math.radians(rayAngle)) / precision
+        rayIncrement = Vector2(math.cos(math.radians(rayAngle)) / precision,
+                         math.sin(math.radians(rayAngle)) / precision)
         
         # Wall finder
         wall = 0;
         while(wall == 0):
-            ray.x += rayCos
-            ray.y += raySin
+            ray += rayIncrement
             wall = map[math.floor(ray.y)][math.floor(ray.x)]
 
         # Pythagoras theorem
