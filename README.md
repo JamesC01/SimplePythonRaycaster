@@ -2,6 +2,8 @@
 A simple raycaster implemented in Python using PyGame.
 
 ## Screenshots
+![Screenshot of raycaster](images/raycaster.png)
+![Screenshot of raycaster](images/raycaster2.png)
 
 ## Useful Resources
 * [lodev.org - Raycasting](https://lodev.org/cgtutor/raycasting.html)
