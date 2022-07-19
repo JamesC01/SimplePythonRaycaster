@@ -8,45 +8,45 @@ import pygame, sys, math
 from pygame import Vector2
 
 class Player:
-    fov = 60
-    half_fov = fov/2
-    pos = Vector2(2,2)
-    angle = 90
-
+    FOV = 60
+    HALF_FOV = FOV/2
     SPEED = 4
-    ROT_SPEED = 180
+    ROTATE_SPEED = 180
 
-    @classmethod
-    def update(cls):
+    def __init__(self, pos=Vector2(2,2), angle=90):
+        self.pos = pos
+        self.angle = angle
+
+    def update(self):
         keys = pygame.key.get_pressed()
 
-        angle_vec = Vector2(
-            math.cos(math.radians(Player.angle)),
-            math.sin(math.radians(Player.angle))
+        angle_xy = Vector2(
+            math.cos(math.radians(self.angle)),
+            math.sin(math.radians(self.angle))
         ).normalize()
 
+        # Move
         if keys[pygame.K_UP]:
-            dest = Player.pos + angle_vec * Player.SPEED * delta_time
+            dest = self.pos + angle_xy * Player.SPEED * delta_time
             if map[int(dest.x)][int(dest.y)] == 0:
-                Player.pos = dest
+                self.pos = dest
         if keys[pygame.K_DOWN]:
-            dest = Player.pos - angle_vec * Player.SPEED * delta_time
+            dest = self.pos - angle_xy * Player.SPEED * delta_time
             if map[int(dest.x)][int(dest.y)] == 0:
-                    Player.pos = dest
+                    self.pos = dest
+
+        # Rotate
         if keys[pygame.K_LEFT]:
-            Player.angle -= Player.ROT_SPEED * delta_time
+            self.angle -= Player.ROTATE_SPEED * delta_time
         if keys[pygame.K_RIGHT]:
-            Player.angle += Player.ROT_SPEED * delta_time
+            self.angle += Player.ROTATE_SPEED * delta_time
 
 
-
+# Size of the raycaster surface
 RAYCAST_WIDTH = 320
 RAYCAST_HEIGHT = 240
 RAYCAST_HALF_WIDTH = RAYCAST_WIDTH/2
 RAYCAST_HALF_HEIGHT = RAYCAST_HEIGHT/2
-
-increment_angle = Player.fov / RAYCAST_HEIGHT
-precision = 0.1 # ray increment amount
 
 map = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -61,42 +61,43 @@ map = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ]
 
-raycast_surface = pygame.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
-screen = pygame.display.set_mode((1280, 960))
+increment_angle = Player.FOV / RAYCAST_HEIGHT
+precision = 0.1 # ray increment amount
 
-def ceiling_and_floor():
+def ceiling_and_floor(floor_color, ceiling_color):
     for y in range(0, int(RAYCAST_HALF_HEIGHT)):
         color = 255-(255*(y/RAYCAST_HALF_HEIGHT+0.0001))
         if color < 0:
             color = 0
         if color > 255:
             color = 255
-        pygame.draw.line(raycast_surface, (color*0.1, color*0.5, color*0.5), (0, y), (RAYCAST_WIDTH, y))
+        pygame.draw.line(raycast_surface, (color*ceiling_color[0], color*ceiling_color[1], color*ceiling_color[2]), (0, y), (RAYCAST_WIDTH, y))
     for y in range(int(RAYCAST_HALF_HEIGHT), int(RAYCAST_HEIGHT)):
         color = 255*((y-RAYCAST_HALF_HEIGHT)/RAYCAST_HALF_HEIGHT+0.0001)
         if color < 0:
             color = 0
         if color > 255:
             color = 255
-        pygame.draw.line(raycast_surface, (color*0.1, color*0.4, color*0.8), (0, y), (RAYCAST_WIDTH, y))
+        pygame.draw.line(raycast_surface, (color*floor_color[0], color*floor_color[1], color*floor_color[2]), (0, y), (RAYCAST_WIDTH, y))
 
 def raycast():
-    rayAngle = Player.angle - Player.half_fov
+    ray_angle = player.angle - Player.HALF_FOV
     for x in range(0, RAYCAST_WIDTH):
-        rayPos = Player.pos.copy()
+        ray_pos = player.pos.copy()
 
-        rayDir = Vector2(math.cos(math.radians(rayAngle)),
-                         math.sin(math.radians(rayAngle))).normalize()
+        ray_dir = Vector2(math.cos(math.radians(ray_angle)),
+                         math.sin(math.radians(ray_angle))).normalize()
         
+        # Keep moving rayPos along rayDir until it hits a wall
         wall = 0
         while(wall == 0):
-            rayPos += rayDir * precision
-            wall = map[int(rayPos.x)][int(rayPos.y)]
+            ray_pos += ray_dir * precision
+            wall = map[int(ray_pos.x)][int(ray_pos.y)]
 
-        difference = Player.pos - rayPos
-        distance = difference.length()
+        ray_length_xy = player.pos - ray_pos
+        distance = ray_length_xy.length()
 
-        wallHeight = math.floor(RAYCAST_HEIGHT / distance) * 0.5
+        wall_height = math.floor(RAYCAST_HEIGHT / distance) * 0.5
 
         color = 255/distance
         if color < 0:
@@ -104,20 +105,25 @@ def raycast():
         if color > 255:
             color = 255
 
-        pygame.draw.line(raycast_surface, (color*0.8, color*0.6, color), (x, RAYCAST_HALF_HEIGHT - wallHeight), (x, RAYCAST_HALF_HEIGHT + wallHeight))
-        rayAngle += increment_angle
+        pygame.draw.line(raycast_surface, (color*0.8, color*0.6, color), (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
+        ray_angle += increment_angle
 
 pygame.init()
+raycast_surface = pygame.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
+screen = pygame.display.set_mode((1280, 960))
+
+player = Player()
 
 while True:
     loop_start_time = pygame.time.get_ticks()/1000
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
 
-    Player.update()
+    player.update()
 
-    ceiling_and_floor()
+    ceiling_and_floor((0.2, 0.2, 0.2), (0.3, 0.2, 0.1))
     raycast()
 
     screen.blit(pygame.transform.scale(raycast_surface, (screen.get_width(), screen.get_height())), (0, 0))
