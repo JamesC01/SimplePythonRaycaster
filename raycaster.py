@@ -74,8 +74,8 @@ class Player:
 # Size of the raycaster surface
 RAYCAST_WIDTH = 320
 RAYCAST_HEIGHT = 240
-RAYCAST_HALF_WIDTH = RAYCAST_WIDTH/2
-RAYCAST_HALF_HEIGHT = RAYCAST_HEIGHT/2
+RAYCAST_HALF_WIDTH = int(RAYCAST_WIDTH/2)
+RAYCAST_HALF_HEIGHT = int(RAYCAST_HEIGHT/2)
 
 map = []
 
@@ -103,23 +103,33 @@ def generate_map(map_size, noise_scale):
                     noise = 0
                 map[x].append(noise)
 
-def ceiling_and_floor(floor_color, ceiling_color):
-    for y in range(0, int(RAYCAST_HALF_HEIGHT)):
-        color = 255-(255*(y/RAYCAST_HALF_HEIGHT+0.0001))
-        if color < 0:
-            color = 0
-        if color > 255:
-            color = 255
-        pygame.draw.line(raycast_surface, (color*ceiling_color[0], color*ceiling_color[1], color*ceiling_color[2]), (0, y), (RAYCAST_WIDTH, y))
-    for y in range(int(RAYCAST_HALF_HEIGHT), int(RAYCAST_HEIGHT)):
-        color = 255*((y-RAYCAST_HALF_HEIGHT)/RAYCAST_HALF_HEIGHT+0.0001)
-        if color < 0:
-            color = 0
-        if color > 255:
-            color = 255
-        pygame.draw.line(raycast_surface, (color*floor_color[0], color*floor_color[1], color*floor_color[2]), (0, y), (RAYCAST_WIDTH, y))
+def render_floor_or_ceiling(*, which, color):
+    which = which.lower()
+    if which == 'ceiling':
+        draw_range = range(0, RAYCAST_HALF_HEIGHT)
+    elif which == 'floor':
+        draw_range = range(RAYCAST_HALF_HEIGHT, RAYCAST_HEIGHT)
+    else:
+        raise Exception('Error: invalid option for which. Has to be \'ceiling\' or \'floor\'')
 
-def raycast():
+    for y in draw_range:
+        new_color = list(color)
+        for i in range(3):
+            if which.lower() == 'floor':
+                new_color[i] = new_color[i]*((y-RAYCAST_HALF_HEIGHT)/RAYCAST_HALF_HEIGHT)
+            elif which.lower() == 'ceiling':
+                new_color[i] = new_color[i]-(new_color[i]*(y/RAYCAST_HALF_HEIGHT))
+
+        pygame.draw.line(raycast_surface, tuple(new_color), (0, y), (RAYCAST_WIDTH, y))
+
+    
+
+WALL_UNBREAKABLE_COLOR = (100, 100, 100)
+WALL_BREAKABLE_COLOR = (11, 64, 25)
+SKY_COLOR = (189, 235, 255)
+GROUND_COLOR = (71, 201, 92)
+
+def raycast(brightness=0.6):
     ray_angle = player.angle - Player.HALF_FOV
     for x in range(0, RAYCAST_WIDTH):
         ray_pos = player.pos.copy()
@@ -142,16 +152,14 @@ def raycast():
 
         wall_height = math.floor(RAYCAST_HEIGHT / distance) * 0.5
 
-        color = 255/distance
-        if color < 0:
-            color = 0
-        if color > 255:
-            color = 255
+        match wall:
+            case 1:
+                base_color = WALL_UNBREAKABLE_COLOR
+            case 2:
+                base_color = WALL_BREAKABLE_COLOR
 
-        if wall == 1:
-            color = (color*0.3, color*0.3, color*0.3)
-        elif wall == 2:
-            color = (color*0.3, color*0.5, color*0.8)
+        lit_color = tuple(n/(distance*brightness) for n in base_color)
+        color = tuple(min(base_color[i], max(0, v)) for i, v in enumerate(lit_color)) # clamp between 0 and the corrosponding base_color value
 
         pygame.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
         ray_angle += increment_angle
@@ -162,34 +170,38 @@ screen = pygame.display.set_mode((1280, 960))
 
 player = Player()
 
-# TODO add toggleable top down view
 
 generate_map(100, 0.2)
 
 def render_2d(surface):
-    pygame.draw.rect(surface, (50, 50, 50), pygame.Rect(0, 0, len(map), len(map)))
+    pygame.draw.rect(surface, tuple(n*2 for n in WALL_BREAKABLE_COLOR), pygame.Rect(0, 0, len(map), len(map)))
+
 
     for x in range(len(map)):
         for y in range(len(map)):
             if map[x][y] != 0:
-                pygame.draw.line(surface, ((175, 140, 200)), (x, y), (x,y))
+                pygame.draw.line(surface, WALL_BREAKABLE_COLOR, (x, y), (x,y))
 
     pygame.draw.circle(surface, (255, 255, 255), player.pos, 2)
     ray_left = player.angle - Player.HALF_FOV
     ray_left = Vector2(
         math.cos(math.radians(ray_left)),
         math.sin(math.radians(ray_left))
-    )*50
+    ) * 50
     pygame.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_left)
 
     ray_right = player.angle + Player.HALF_FOV
     ray_right = Vector2(
         math.cos(math.radians(ray_right)),
         math.sin(math.radians(ray_right))
-    )*50
+    ) * 50
     pygame.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_right)
 
 preview_2d_map = True
+
+# TODO: Refactor code (make functions less coupled to global vars)
+#       Make functions take color values/find a better way to deal with
+#       colours. Also, just generally polish the code a bit.
 
 while True:
     loop_start_time = pygame.time.get_ticks()/1000
@@ -203,7 +215,8 @@ while True:
 
     player.update()
 
-    ceiling_and_floor((0.2, 0.2, 0.2), (0.3, 0.2, 0.1))
+    render_floor_or_ceiling(which='ceiling', color=SKY_COLOR)
+    render_floor_or_ceiling(which='floor', color=GROUND_COLOR)
     raycast()
 
     screen.blit(pygame.transform.scale(raycast_surface, (screen.get_width(), screen.get_height())), (0, 0))
