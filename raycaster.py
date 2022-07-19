@@ -72,15 +72,15 @@ class Player:
 
 
 # Size of the raycaster surface
-RAYCAST_WIDTH = 128
-RAYCAST_HEIGHT = 100
+RAYCAST_WIDTH = 320
+RAYCAST_HEIGHT = 240
 RAYCAST_HALF_WIDTH = RAYCAST_WIDTH/2
 RAYCAST_HALF_HEIGHT = RAYCAST_HEIGHT/2
 
 map = []
 
 increment_angle = Player.FOV / RAYCAST_HEIGHT
-precision = 0.01 # ray increment amount
+precision = 0.1 # ray increment amount
 
 def generate_map(map_size, noise_scale):
     """Generates a 2d list of map_size width and height using simplex noise.
@@ -166,7 +166,7 @@ def render_2d(surface):
     for x in range(len(map)):
         for y in range(len(map)):
             if map[x][y] != 0:
-                pygame.draw.line(surface, (100, 100, 255), (x, y), (x,y))
+                pygame.draw.line(surface, ((175, 140, 200)), (x, y), (x,y))
 
     pygame.draw.circle(surface, (255, 255, 255), player.pos, 2)
     ray_left = player.angle - Player.HALF_FOV
@@ -183,12 +183,17 @@ def render_2d(surface):
     )*50
     pygame.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_right)
 
+preview_2d_map = True
+
 while True:
     loop_start_time = pygame.time.get_ticks()/1000
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_p:
+                preview_2d_map = not preview_2d_map
 
     player.update()
 
@@ -197,9 +202,10 @@ while True:
 
     screen.blit(pygame.transform.scale(raycast_surface, (screen.get_width(), screen.get_height())), (0, 0))
     
-    surface = pygame.Surface((100, 100))
-    render_2d(surface)
-    screen.blit(pygame.transform.scale(surface, (200, 200)), (0, 0))
+    if preview_2d_map:
+        preview_surface = pygame.Surface((100, 100))
+        render_2d(preview_surface)
+        screen.blit(pygame.transform.scale(preview_surface, (300, 300)), (0, 0))
 
     pygame.display.flip()
     
