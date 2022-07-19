@@ -4,8 +4,11 @@
 # I simplified some things in that tutorial, and now I believe I finally fully understand how
 # a raycaster works.
 
+from doctest import REPORT_CDIFF
+import random
 import pygame, sys, math
 from pygame import Vector2
+import opensimplex
 
 class Player:
     FOV = 60
@@ -13,7 +16,7 @@ class Player:
     SPEED = 4
     ROTATE_SPEED = 180
 
-    def __init__(self, pos=Vector2(2,2), angle=90):
+    def __init__(self, pos=Vector2(2,2), angle=45):
         self.pos = pos
         self.angle = angle
 
@@ -41,28 +44,64 @@ class Player:
         if keys[pygame.K_RIGHT]:
             self.angle += Player.ROTATE_SPEED * delta_time
 
+        # Reposition
+        if keys[pygame.K_r]:
+            self.reposition()
+
+        if keys[pygame.K_SPACE]:
+            ray = self.pos.copy()
+            wall = 0
+            while wall == 0:
+                ray += angle_xy * precision
+                wall = map[int(ray.x)][int(ray.y)]
+            if wall == 2:
+                map[int(ray.x)][int(ray.y)] = 0
+
+
+    # broken!
+    def reposition(self):
+        for x in range(100):
+            for y in range(100):
+                if map[x][y] == 0:
+                    self.pos.x = x
+                    self.pos.y = y
+                    print('break')
+                    break
+            else:
+                break
+
 
 # Size of the raycaster surface
-RAYCAST_WIDTH = 320
-RAYCAST_HEIGHT = 240
+RAYCAST_WIDTH = 128
+RAYCAST_HEIGHT = 100
 RAYCAST_HALF_WIDTH = RAYCAST_WIDTH/2
 RAYCAST_HALF_HEIGHT = RAYCAST_HEIGHT/2
 
-map = [
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-]
+map = []
 
 increment_angle = Player.FOV / RAYCAST_HEIGHT
-precision = 0.1 # ray increment amount
+precision = 0.01 # ray increment amount
+
+def generate_map(map_size, noise_scale):
+    """Generates a 2d list of map_size width and height using simplex noise.
+        Also makes sure map boundaries are always walls.
+        
+        Arguments:
+        map_size -- The width and height of the list
+        noise_scale -- the scale of the simplex noise (smaller values mean bigger noise)"""
+    opensimplex.seed(random.randrange(999999999))
+    for x in range(map_size):
+        map.append([])
+        for y in range(map_size):
+            if (y == 0 or y == map_size-1) or (x == 0 or x == map_size-1):
+                map[x].append(1)
+            else:
+                noise = opensimplex.noise2(x*noise_scale, y*noise_scale)
+                if noise > 0:
+                    noise = 2
+                else:
+                    noise = 0
+                map[x].append(noise)
 
 def ceiling_and_floor(floor_color, ceiling_color):
     for y in range(0, int(RAYCAST_HALF_HEIGHT)):
@@ -89,6 +128,9 @@ def raycast():
                          math.sin(math.radians(ray_angle))).normalize()
         
         # Keep moving rayPos along rayDir until it hits a wall
+        # NOTE: Because of the way python lists work, if a ray
+        # goes in the negative direction, it will wrap around
+        # to the end of the list. So the world will loop once.
         wall = 0
         while(wall == 0):
             ray_pos += ray_dir * precision
@@ -116,6 +158,31 @@ player = Player()
 
 # TODO add toggleable top down view
 
+generate_map(100, 0.2)
+
+def render_2d(surface):
+    pygame.draw.rect(surface, (50, 50, 50), pygame.Rect(0, 0, len(map), len(map)))
+
+    for x in range(len(map)):
+        for y in range(len(map)):
+            if map[x][y] != 0:
+                pygame.draw.line(surface, (100, 100, 255), (x, y), (x,y))
+
+    pygame.draw.circle(surface, (255, 255, 255), player.pos, 2)
+    ray_left = player.angle - Player.HALF_FOV
+    ray_left = Vector2(
+        math.cos(math.radians(ray_left)),
+        math.sin(math.radians(ray_left))
+    )*50
+    pygame.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_left)
+
+    ray_right = player.angle + Player.HALF_FOV
+    ray_right = Vector2(
+        math.cos(math.radians(ray_right)),
+        math.sin(math.radians(ray_right))
+    )*50
+    pygame.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_right)
+
 while True:
     loop_start_time = pygame.time.get_ticks()/1000
 
@@ -130,6 +197,10 @@ while True:
 
     screen.blit(pygame.transform.scale(raycast_surface, (screen.get_width(), screen.get_height())), (0, 0))
     
+    surface = pygame.Surface((100, 100))
+    render_2d(surface)
+    screen.blit(pygame.transform.scale(surface, (200, 200)), (0, 0))
+
     pygame.display.flip()
     
     delta_time = pygame.time.get_ticks()/1000 - loop_start_time
