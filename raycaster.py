@@ -10,17 +10,24 @@ import pygame, sys, math
 from pygame import Vector2
 import opensimplex
 
+# Size of the raycaster surface
+RAYCAST_WIDTH = 320
+RAYCAST_HEIGHT = 240
+RAYCAST_HALF_WIDTH = int(RAYCAST_WIDTH/2)
+RAYCAST_HALF_HEIGHT = int(RAYCAST_HEIGHT/2)
+
 class Player:
     FOV = 60
     HALF_FOV = FOV/2
     SPEED = 4
     ROTATE_SPEED = 180
 
-    def __init__(self, pos=Vector2(2,2), angle=45):
+    def __init__(self, game_map, pos=Vector2(2,2), angle=45):
         self.pos = pos
         self.angle = angle
+        self.game_map = game_map
 
-    def update(self):
+    def update(self, delta):
         keys = pygame.key.get_pressed()
 
         angle_xy = Vector2(
@@ -30,21 +37,21 @@ class Player:
 
         # Move
         if keys[pygame.K_UP]:
-            dest = self.pos + angle_xy * Player.SPEED * delta_time
-            if map[int(dest.x)][int(dest.y)] == 0:
+            dest = self.pos + angle_xy * Player.SPEED * delta
+            if self.game_map[int(dest.x)][int(dest.y)] == 0:
                 self.pos = dest
         if keys[pygame.K_DOWN]:
-            dest = self.pos - angle_xy * Player.SPEED * delta_time
-            if map[int(dest.x)][int(dest.y)] == 0:
+            dest = self.pos - angle_xy * Player.SPEED * delta
+            if self.game_map[int(dest.x)][int(dest.y)] == 0:
                     self.pos = dest
 
         # Rotate
         if keys[pygame.K_LEFT]:
-            self.angle -= Player.ROTATE_SPEED * delta_time
+            self.angle -= Player.ROTATE_SPEED * delta
         if keys[pygame.K_RIGHT]:
-            self.angle += Player.ROTATE_SPEED * delta_time
+            self.angle += Player.ROTATE_SPEED * delta
 
-        # Reposition
+        # Reposition (not working)
         if keys[pygame.K_r]:
             self.reposition()
 
@@ -53,9 +60,9 @@ class Player:
             wall = 0
             while wall == 0:
                 ray += angle_xy * precision
-                wall = map[int(ray.x)][int(ray.y)]
+                wall = self.game_map[int(ray.x)][int(ray.y)]
             if wall == 2:
-                map[int(ray.x)][int(ray.y)] = 0
+                self.game_map[int(ray.x)][int(ray.y)] = 0
 
 
     # broken!
@@ -69,13 +76,6 @@ class Player:
                     break
             else:
                 break
-
-
-# Size of the raycaster surface
-RAYCAST_WIDTH = 320
-RAYCAST_HEIGHT = 240
-RAYCAST_HALF_WIDTH = int(RAYCAST_WIDTH/2)
-RAYCAST_HALF_HEIGHT = int(RAYCAST_HEIGHT/2)
 
 map = []
 
@@ -125,8 +125,8 @@ def render_floor_or_ceiling(*, which, color):
     
 
 WALL_UNBREAKABLE_COLOR = (100, 100, 100)
-WALL_BREAKABLE_COLOR = (11, 64, 25)
-SKY_COLOR = (189, 235, 255)
+WALL_BREAKABLE_COLOR = (21, 100, 51)
+SKY_COLOR = (107, 191, 255)
 GROUND_COLOR = (71, 201, 92)
 
 def raycast(brightness=0.6):
@@ -164,16 +164,8 @@ def raycast(brightness=0.6):
         pygame.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
         ray_angle += increment_angle
 
-pygame.init()
-raycast_surface = pygame.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
-screen = pygame.display.set_mode((1280, 960))
-
-player = Player()
-
-
-generate_map(100, 0.2)
-
 def render_2d(surface):
+    # TODO: because colour values are being doubled, colour can't exceed 255/2. Fix this
     pygame.draw.rect(surface, tuple(n*2 for n in WALL_BREAKABLE_COLOR), pygame.Rect(0, 0, len(map), len(map)))
 
 
@@ -197,11 +189,22 @@ def render_2d(surface):
     ) * 50
     pygame.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_right)
 
+pygame.init()
+raycast_surface = pygame.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
+screen = pygame.display.set_mode((1280, 960))
+
+player = Player(map)
+
+
+generate_map(100, 0.2)
+
 preview_2d_map = True
 
 # TODO: Refactor code (make functions less coupled to global vars)
 #       Make functions take color values/find a better way to deal with
 #       colours. Also, just generally polish the code a bit.
+
+delta_time = pygame.time.get_ticks()/1000
 
 while True:
     loop_start_time = pygame.time.get_ticks()/1000
@@ -213,7 +216,7 @@ while True:
             if event.key == pygame.K_p:
                 preview_2d_map = not preview_2d_map
 
-    player.update()
+    player.update(delta_time)
 
     render_floor_or_ceiling(which='ceiling', color=SKY_COLOR)
     render_floor_or_ceiling(which='floor', color=GROUND_COLOR)
