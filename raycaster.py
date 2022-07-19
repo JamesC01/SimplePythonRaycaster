@@ -131,6 +131,7 @@ def raycast():
         # NOTE: Because of the way python lists work, if a ray
         # goes in the negative direction, it will wrap around
         # to the end of the list. So the world will loop once.
+        # pretty cool bug.
         wall = 0
         while(wall == 0):
             ray_pos += ray_dir * precision
@@ -147,7 +148,12 @@ def raycast():
         if color > 255:
             color = 255
 
-        pygame.draw.line(raycast_surface, (color*0.8, color*0.6, color), (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
+        if wall == 1:
+            color = (color*0.3, color*0.3, color*0.3)
+        elif wall == 2:
+            color = (color*0.3, color*0.5, color*0.8)
+
+        pygame.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
         ray_angle += increment_angle
 
 pygame.init()
@@ -206,6 +212,7 @@ while True:
         preview_surface = pygame.Surface((100, 100))
         render_2d(preview_surface)
         screen.blit(pygame.transform.scale(preview_surface, (300, 300)), (0, 0))
+
 
     pygame.display.flip()
     
