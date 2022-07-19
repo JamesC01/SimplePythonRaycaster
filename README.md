@@ -1,5 +1,5 @@
 # SimplePythonRaycaster
-A simple raycaster implemented in Python using PyGame. Uses opensimplex to randomly generate grid cells. Requires PyGame and opensimplex to be installed.
+A simple raycaster implemented in Python using PyGame. The map is randomly generated using simplex noise.
 
 ## Controls
 * Up and down array move you forward and back
@@ -14,6 +14,11 @@ A simple raycaster implemented in Python using PyGame. Uses opensimplex to rando
 ## Useful Resources
 * [lodev.org - Raycasting](https://lodev.org/cgtutor/raycasting.html)
 * [RayCastingTutorial](https://github.com/vinibiavatti1/RayCastingTutorial)
+
+## Dependencies
+Submit an issue if this project doesn't work with the latest versions of these libraries.
+* [PyGame](https://pypi.org/project/pygame/)
+* [opensimplex](https://pypi.org/project/opensimplex/)
 
 ## Contributing
 I don't plan on accepting pull requests, this is a small personal project.
