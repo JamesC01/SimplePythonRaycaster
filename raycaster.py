@@ -164,7 +164,7 @@ def raycast(brightness=0.6):
         pygame.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
         ray_angle += ray_angle_increment
 
-def render_2d(surface):
+def render_minimap(surface):
     # TODO: because colour values are being doubled, colour can't exceed 255/2. Fix this
     pygame.draw.rect(surface, tuple(n*2 for n in WALL_BREAKABLE_COLOR), pygame.Rect(0, 0, len(map), len(map)))
 
@@ -198,7 +198,7 @@ player = Player(map)
 
 generate_map(100, 0.2)
 
-preview_2d_map = True
+show_minimap = True
 
 # TODO: Refactor code (make functions less coupled to global vars)
 #       Make functions take color values/find a better way to deal with
@@ -214,7 +214,7 @@ while True:
             sys.exit()
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_p:
-                preview_2d_map = not preview_2d_map
+                show_minimap = not show_minimap
 
     player.update(delta_time)
 
@@ -224,10 +224,10 @@ while True:
 
     screen.blit(pygame.transform.scale(raycast_surface, (screen.get_width(), screen.get_height())), (0, 0))
     
-    if preview_2d_map:
-        preview_surface = pygame.Surface((100, 100))
-        render_2d(preview_surface)
-        screen.blit(pygame.transform.scale(preview_surface, (300, 300)), (0, 0))
+    if show_minimap:
+        minimap_surf = pygame.Surface((100, 100))
+        render_minimap(minimap_surf)
+        screen.blit(pygame.transform.scale(minimap_surf, (300, 300)), (0, 0))
 
 
     pygame.display.flip()
