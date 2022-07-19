@@ -1,5 +1,5 @@
 # SimplePythonRaycaster
-A simple raycaster implemented in Python using PyGame.
+A simple raycaster implemented in Python using PyGame. Requires PyGame to be installed.
 
 ## Screenshots
 <img src="images/raycaster.png" alt="drawing" width="500px"/>
