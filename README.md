@@ -2,10 +2,11 @@
 A simple raycaster implemented in Python using PyGame. The map is randomly generated using simplex noise, and the walls can be destroyed. Also features a 2d minimap.
 
 ## Controls
-* __Up__ and __down__ move you forward and back
-* __Left__ and __right__ rotate your view
-* __P__ toggles the 2d minimap
-* __Space__ deletes the cells in front of you (use this if you spawn inside of a cell)
+* __Up__ and __down__ to move forward and back
+* __Left__ and __right__ to rotate view
+* __Alt__ + (__Left__ or __right__) to strafe
+* __M__ to toggle the 2d minimap
+* __Space__ to delete the wall in front of the crosshair (use this if you spawn inside a wall)
 
 ## Screenshots
 <img src="images/raycaster_screenshot1.png" alt="drawing" width="500px"/>

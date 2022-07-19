@@ -22,35 +22,37 @@ class Player:
     SPEED = 4
     ROTATE_SPEED = 180
 
-    def __init__(self, game_map, pos=Vector2(2,2), angle=45):
+    def __init__(self, pos=Vector2(2,2), angle=45):
         self.pos = pos
         self.angle = angle
-        self.game_map = game_map
 
-    def update(self, delta):
-        keys = pygame.key.get_pressed()
-
-        angle_xy = Vector2(
+    def angle_xy(self):
+        """Returns the players current angle degrees as a normalized Vector2"""
+        return Vector2(
             math.cos(math.radians(self.angle)),
             math.sin(math.radians(self.angle))
         ).normalize()
 
+    def update(self, delta):
+        keys = pygame.key.get_pressed()
+
         # Move
         if keys[pygame.K_UP]:
-            dest = self.pos + angle_xy * Player.SPEED * delta
-            if self.game_map[int(dest.x)][int(dest.y)] == 0:
+            dest = self.pos + self.angle_xy() * Player.SPEED * delta
+            if map[int(dest.x)][int(dest.y)] == 0:
                 self.pos = dest
         if keys[pygame.K_DOWN]:
-            dest = self.pos - angle_xy * Player.SPEED * delta
-            if self.game_map[int(dest.x)][int(dest.y)] == 0:
+            dest = self.pos - self.angle_xy() * Player.SPEED * delta
+            if map[int(dest.x)][int(dest.y)] == 0:
                     self.pos = dest
 
         if keys[pygame.K_LALT] or keys[pygame.K_RALT]:
+            right = -Vector2(self.angle_xy(), -self.angle_xy())
             # Strafe
             if keys[pygame.K_LEFT]:
-                self.pos -= -Vector2(angle_xy.y, -angle_xy.x) * Player.SPEED * delta
+                self.pos -= right * Player.SPEED * delta
             if keys[pygame.K_RIGHT]:
-                self.pos += -Vector2(angle_xy.y, -angle_xy.x) * Player.SPEED * delta
+                self.pos += right * Player.SPEED * delta
         else:
              # Rotate
             if keys[pygame.K_LEFT]:
@@ -61,15 +63,6 @@ class Player:
         # Reposition (not working)
         if keys[pygame.K_r]:
             self.reposition()
-
-        if keys[pygame.K_SPACE]:
-            ray = self.pos.copy()
-            wall = 0
-            while wall == 0:
-                ray += angle_xy * ray_precision
-                wall = self.game_map[int(ray.x)][int(ray.y)]
-            if wall == 2:
-                self.game_map[int(ray.x)][int(ray.y)] = 0
 
 
     # broken!
@@ -200,7 +193,7 @@ pygame.init()
 raycast_surface = pygame.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
 screen = pygame.display.set_mode((1280, 960))
 
-player = Player(map)
+player = Player()
 
 generate_map(100, 0.2)
 
@@ -223,8 +216,17 @@ while True:
         if event.type == pygame.QUIT:
             sys.exit()
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_p:
+            if event.key == pygame.K_m:
                 show_minimap = not show_minimap
+            elif event.key == pygame.K_SPACE:
+                    # Raycast directly forward and delete wall if it hits one
+                    ray = player.pos.copy()
+                    wall = 0
+                    while wall == 0:
+                        ray += player.angle_xy() * ray_precision
+                        wall = map[int(ray.x)][int(ray.y)]
+                    if wall == 2:
+                        map[int(ray.x)][int(ray.y)] = 0
 
     player.update(delta_time)
 
