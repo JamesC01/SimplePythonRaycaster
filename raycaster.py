@@ -9,6 +9,7 @@ import pygame, sys, math
 from pygame import Vector2
 import opensimplex
 from player import Player
+#from pygame.math import clamp # waiting for next pygame release
 
 def clamp(val, minval, maxval):
     return min(max(minval, val), maxval)

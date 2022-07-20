@@ -5,7 +5,7 @@ class Player:
     FOV = 70
     HALF_FOV = FOV/2
     SPEED = 4
-    ROTATE_SPEED = 180
+    ROTATE_SPEED = 120
 
     def __init__(self, pos=Vector2(2,2), angle=45):
         self.pos = pos
