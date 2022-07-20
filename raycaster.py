@@ -45,24 +45,25 @@ def generate_map(map_size, noise_scale):
                     noise = 0
                 map[x].append(noise)
 
-def render_floor_or_ceiling(*, which, color):
+def render_floor_or_ceiling(*, which, light_color: pygame.Color, dark_color: pygame.Color):
     which = which.lower()
     if which == 'ceiling':
         draw_range = range(0, RAYCAST_HALF_HEIGHT)
+        start_color = light_color
+        end_color = dark_color
+        offset = 0
     elif which == 'floor':
         draw_range = range(RAYCAST_HALF_HEIGHT, RAYCAST_HEIGHT)
+        start_color = dark_color
+        end_color = light_color
+        offset = RAYCAST_HALF_HEIGHT
     else:
         raise Exception('Error: invalid option for which. Has to be \'ceiling\' or \'floor\'')
 
     for y in draw_range:
-        new_color = list(color)
-        for i in range(3):
-            if which.lower() == 'floor':
-                new_color[i] = new_color[i]*((y-RAYCAST_HALF_HEIGHT)/RAYCAST_HALF_HEIGHT)
-            elif which.lower() == 'ceiling':
-                new_color[i] = new_color[i]-(new_color[i]*(y/RAYCAST_HALF_HEIGHT))
+        color = start_color.lerp(end_color, clamp((y-offset)/draw_range.stop, 0, 1))
 
-        pygame.draw.line(raycast_surface, tuple(new_color), (0, y), (RAYCAST_WIDTH, y))
+        pygame.draw.line(raycast_surface, tuple(color), (0, y), (RAYCAST_WIDTH, y))
 
     
 
@@ -134,7 +135,7 @@ player = Player()
 generate_map(100, 0.2)
 
 show_minimap = True
-
+min
 # TODO: Refactor code (make functions less coupled to global vars)
 #       Make functions take color values/find a better way to deal with
 #       colours. Also, just generally polish the code a bit.
@@ -166,8 +167,8 @@ while True:
 
     player.update(delta_time, map)
 
-    render_floor_or_ceiling(which='ceiling', color=SKY_COLOR)
-    render_floor_or_ceiling(which='floor', color=GROUND_COLOR)
+    render_floor_or_ceiling(which='ceiling', light_color=pygame.Color(SKY_COLOR), dark_color=pygame.Color(0,0,0))
+    render_floor_or_ceiling(which='floor', light_color=pygame.Color(GROUND_COLOR), dark_color=pygame.Color(0,0,0))
     raycast()
 
     screen.blit(pygame.transform.scale(raycast_surface, (screen.get_width(), screen.get_height())), (0, 0))
