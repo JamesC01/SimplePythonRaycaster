@@ -4,78 +4,20 @@
 # I simplified some things in that tutorial, and now I believe I finally fully understand how
 # a raycaster works.
 
-from doctest import REPORT_CDIFF
 import random
 import pygame, sys, math
 from pygame import Vector2
 import opensimplex
+from player import Player
+
+def clamp(val, minval, maxval):
+    return min(max(minval, val), maxval)
 
 # Size of the raycaster surface
-RAYCAST_WIDTH = 640
-RAYCAST_HEIGHT = 480
+RAYCAST_WIDTH = 320
+RAYCAST_HEIGHT = 240
 RAYCAST_HALF_WIDTH = int(RAYCAST_WIDTH/2)
 RAYCAST_HALF_HEIGHT = int(RAYCAST_HEIGHT/2)
-
-class Player:
-    FOV = 70
-    HALF_FOV = FOV/2
-    SPEED = 4
-    ROTATE_SPEED = 180
-
-    def __init__(self, pos=Vector2(2,2), angle=45):
-        self.pos = pos
-        self.angle = angle
-
-    def angle_xy(self):
-        """Returns the players current angle degrees as a normalized Vector2"""
-        return Vector2(
-            math.cos(math.radians(self.angle)),
-            math.sin(math.radians(self.angle))
-        ).normalize()
-
-    def update(self, delta):
-        keys = pygame.key.get_pressed()
-
-        # Move
-        if keys[pygame.K_UP]:
-            dest = self.pos + self.angle_xy() * Player.SPEED * delta
-            if map[int(dest.x)][int(dest.y)] == 0:
-                self.pos = dest
-        if keys[pygame.K_DOWN]:
-            dest = self.pos - self.angle_xy() * Player.SPEED * delta
-            if map[int(dest.x)][int(dest.y)] == 0:
-                    self.pos = dest
-
-        if keys[pygame.K_LALT] or keys[pygame.K_RALT]:
-            right = -Vector2(self.angle_xy(), -self.angle_xy())
-            # Strafe
-            if keys[pygame.K_LEFT]:
-                self.pos -= right * Player.SPEED * delta
-            if keys[pygame.K_RIGHT]:
-                self.pos += right * Player.SPEED * delta
-        else:
-             # Rotate
-            if keys[pygame.K_LEFT]:
-                self.angle -= Player.ROTATE_SPEED * delta
-            if keys[pygame.K_RIGHT]:
-                self.angle += Player.ROTATE_SPEED * delta
-
-        # Reposition (not working)
-        if keys[pygame.K_r]:
-            self.reposition()
-
-
-    # broken!
-    def reposition(self):
-        for x in range(100):
-            for y in range(100):
-                if map[x][y] == 0:
-                    self.pos.x = x
-                    self.pos.y = y
-                    print('break')
-                    break
-            else:
-                break
 
 map = []
 
@@ -159,39 +101,33 @@ def raycast(brightness=0.6):
                 base_color = WALL_BREAKABLE_COLOR
 
         lit_color = tuple(n/(distance*brightness) for n in base_color)
-        color = tuple(min(base_color[i], max(0, v)) for i, v in enumerate(lit_color)) # clamp between 0 and the corrosponding base_color value
+        color = tuple(clamp(v, 0, base_color[i]) for i, v in enumerate(lit_color)) # clamp between 0 and the corrosponding base_color value
 
         pygame.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
         ray_angle += ray_angle_increment
 
 def render_minimap(surface):
     # TODO: because colour values are being doubled, colour can't exceed 255/2. Fix this
-    pygame.draw.rect(surface, tuple(n*2 for n in WALL_BREAKABLE_COLOR), pygame.Rect(0, 0, len(map), len(map)))
-
-
+    pygame.draw.rect(surface, tuple(clamp(v*2, 0, 255) for v in WALL_BREAKABLE_COLOR), pygame.Rect(0, 0, len(map), len(map)))
     for x in range(len(map)):
         for y in range(len(map)):
             if map[x][y] != 0:
                 pygame.draw.line(surface, WALL_BREAKABLE_COLOR, (x, y), (x,y))
 
-    pygame.draw.circle(surface, (255, 255, 255), player.pos, 2)
-    ray_left = player.angle - Player.HALF_FOV
-    ray_left = Vector2(
-        math.cos(math.radians(ray_left)),
-        math.sin(math.radians(ray_left))
-    ) * 50
-    pygame.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_left)
+    def draw_angle_line(ray_angle):
+        pygame.draw.circle(surface, (255, 255, 255), player.pos, 2)
+        ray_angle = Vector2(
+            math.cos(math.radians(ray_angle)),
+            math.sin(math.radians(ray_angle))
+        ) * 50
+        pygame.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_angle)
 
-    ray_right = player.angle + Player.HALF_FOV
-    ray_right = Vector2(
-        math.cos(math.radians(ray_right)),
-        math.sin(math.radians(ray_right))
-    ) * 50
-    pygame.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_right)
+    draw_angle_line(player.angle - Player.HALF_FOV)
+    draw_angle_line(player.angle + Player.HALF_FOV)
 
 pygame.init()
 raycast_surface = pygame.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
-screen = pygame.display.set_mode((1280, 960))
+screen = pygame.display.set_mode((960, 720))
 
 player = Player()
 
@@ -207,7 +143,7 @@ delta_time = pygame.time.get_ticks()/1000
 
 font = pygame.font.Font(None, 32)
 
-MINIMAP_SIZE = 300
+MINIMAP_SIZE = 200
 
 while True:
     loop_start_time = pygame.time.get_ticks()/1000
@@ -228,7 +164,7 @@ while True:
                     if wall == 2:
                         map[int(ray.x)][int(ray.y)] = 0
 
-    player.update(delta_time)
+    player.update(delta_time, map)
 
     render_floor_or_ceiling(which='ceiling', color=SKY_COLOR)
     render_floor_or_ceiling(which='floor', color=GROUND_COLOR)
@@ -254,4 +190,3 @@ while True:
     pygame.display.flip()
 
     delta_time = pygame.time.get_ticks()/1000 - loop_start_time
-    print('FPS:', int(1/delta_time))
