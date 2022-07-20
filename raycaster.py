@@ -14,11 +14,19 @@ from player import Player
 def clamp(val, minval, maxval):
     return min(max(minval, val), maxval)
 
+# Colour constants
+WALL_UNBREAKABLE_COLOR = (100, 100, 100)
+WALL_BREAKABLE_COLOR = (21, 100, 51)
+SKY_COLOR = (107, 191, 255)
+GROUND_COLOR = (71, 201, 92)
+
 # Size of the raycaster surface
 RAYCAST_WIDTH = 320
 RAYCAST_HEIGHT = 240
 RAYCAST_HALF_WIDTH = int(RAYCAST_WIDTH/2)
 RAYCAST_HALF_HEIGHT = int(RAYCAST_HEIGHT/2)
+
+MINIMAP_SIZE = 200
 
 map = []
 
@@ -66,12 +74,6 @@ def render_floor_or_ceiling(*, which, light_color: pygame.Color, dark_color: pyg
 
         pygame.draw.line(raycast_surface, tuple(color), (0, y), (RAYCAST_WIDTH, y))
 
-    
-
-WALL_UNBREAKABLE_COLOR = (100, 100, 100)
-WALL_BREAKABLE_COLOR = (21, 100, 51)
-SKY_COLOR = (107, 191, 255)
-GROUND_COLOR = (71, 201, 92)
 
 def raycast(brightness=0.6):
     ray_angle = player.angle - Player.HALF_FOV
@@ -127,25 +129,53 @@ def render_minimap(surface):
     draw_angle_line(player.angle - Player.HALF_FOV)
     draw_angle_line(player.angle + Player.HALF_FOV)
 
+def break_wall():
+    """Casts a ray forward from the player until it hits a wall. Breaks the wall if it's breakable."""
+    ray = player.pos.copy()
+    wall = 0
+    while wall == 0:
+        ray += player.angle_xy() * ray_precision
+        wall = map[int(ray.x)][int(ray.y)]
+    if wall == 2:
+        map[int(ray.x)][int(ray.y)] = 0
+
+def render():
+    render_floor_or_ceiling(which='ceiling', light_color=pygame.Color(SKY_COLOR), dark_color=pygame.Color(0,0,0))
+    render_floor_or_ceiling(which='floor', light_color=pygame.Color(GROUND_COLOR), dark_color=pygame.Color(0,0,0))
+    raycast()
+
+    screen.blit(pygame.transform.scale(raycast_surface, (screen.get_width(), screen.get_height())), (0, 0))
+
+    if show_minimap:
+        # Render minimap
+        minimap_surf = pygame.Surface((100, 100))
+        render_minimap(minimap_surf)
+        screen.blit(pygame.transform.scale(minimap_surf, (MINIMAP_SIZE, MINIMAP_SIZE)), (0, 0))
+
+        # Also render FPS
+        fps_text = font.render(f'FPS: {int(1/delta_time)}', False, (255, 255, 255))
+        screen.blit(fps_text, (0, MINIMAP_SIZE))
+
+    # Render crosshair
+    crosshair_surf = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+    pygame.draw.circle(crosshair_surf, pygame.Color(255, 255, 255, 70), (screen.get_width()/2, screen.get_height()/2), 5, )
+    screen.blit(crosshair_surf, (0,0))
+
+# TODO: Refactor code (make functions less coupled to global vars)
+#       Make functions take color values/find a better way to deal with
+#       colours. Also, just generally polish the code a bit.
+
 pygame.init()
 raycast_surface = pygame.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
 screen = pygame.display.set_mode((960, 720))
 
 player = Player()
-
 generate_map(100, 0.2)
-
 show_minimap = True
-min
-# TODO: Refactor code (make functions less coupled to global vars)
-#       Make functions take color values/find a better way to deal with
-#       colours. Also, just generally polish the code a bit.
 
-delta_time = pygame.time.get_ticks()/1000
+delta_time = 1/60
 
 font = pygame.font.Font(None, 32)
-
-MINIMAP_SIZE = 200
 
 while True:
     loop_start_time = pygame.time.get_ticks()/1000
@@ -157,38 +187,11 @@ while True:
             if event.key == pygame.K_m:
                 show_minimap = not show_minimap
             elif event.key == pygame.K_SPACE:
-                    # Raycast directly forward and delete wall if it hits one
-                    ray = player.pos.copy()
-                    wall = 0
-                    while wall == 0:
-                        ray += player.angle_xy() * ray_precision
-                        wall = map[int(ray.x)][int(ray.y)]
-                    if wall == 2:
-                        map[int(ray.x)][int(ray.y)] = 0
+                    break_wall()
 
     player.update(delta_time, map)
 
-    render_floor_or_ceiling(which='ceiling', light_color=pygame.Color(SKY_COLOR), dark_color=pygame.Color(0,0,0))
-    render_floor_or_ceiling(which='floor', light_color=pygame.Color(GROUND_COLOR), dark_color=pygame.Color(0,0,0))
-    raycast()
-
-    screen.blit(pygame.transform.scale(raycast_surface, (screen.get_width(), screen.get_height())), (0, 0))
-    
-    if show_minimap:
-        # Render minimap
-        minimap_surf = pygame.Surface((100, 100))
-        render_minimap(minimap_surf)
-        screen.blit(pygame.transform.scale(minimap_surf, (MINIMAP_SIZE, MINIMAP_SIZE)), (0, 0))
-        
-        # Also render FPS
-        fps_text = font.render(f'FPS: {int(1/delta_time)}', False, (255, 255, 255))
-        screen.blit(fps_text, (0, MINIMAP_SIZE))
-
-    # Render crosshair
-    crosshair_surf = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
-    pygame.draw.circle(crosshair_surf, pygame.Color(255, 255, 255, 70), (screen.get_width()/2, screen.get_height()/2), 5, )
-    screen.blit(crosshair_surf, (0,0))
-    
+    render()
     pygame.display.flip()
 
     delta_time = pygame.time.get_ticks()/1000 - loop_start_time
