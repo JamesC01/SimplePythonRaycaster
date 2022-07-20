@@ -28,6 +28,7 @@ RAYCAST_HALF_HEIGHT = int(RAYCAST_HEIGHT/2)
 
 MINIMAP_SIZE = 200
 
+# 0 = empty, 1 = unbreakable, >1 = breakable
 map = []
 
 ray_angle_increment = Player.FOV / RAYCAST_WIDTH
@@ -103,6 +104,8 @@ def raycast(brightness=0.6):
                 base_color = WALL_UNBREAKABLE_COLOR
             case 2:
                 base_color = WALL_BREAKABLE_COLOR
+            case _:
+                base_color = (1,1,1)
 
         lit_color = tuple(n/(distance*brightness) for n in base_color)
         color = tuple(clamp(v, 0, base_color[i]) for i, v in enumerate(lit_color)) # clamp between 0 and the corrosponding base_color value
@@ -136,7 +139,7 @@ def break_wall():
     while wall == 0:
         ray += player.angle_xy() * ray_precision
         wall = map[int(ray.x)][int(ray.y)]
-    if wall == 2:
+    if wall > 1:
         map[int(ray.x)][int(ray.y)] = 0
 
 def render():
