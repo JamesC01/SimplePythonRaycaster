@@ -16,7 +16,10 @@ def clamp(val, minval, maxval):
 
 # Colour constants
 WALL_UNBREAKABLE_COLOR = (100, 100, 100)
-WALL_BREAKABLE_COLOR = (21, 100, 51)
+WALL_BREAKABLE_COLORS = []
+for i in range(1000):
+    WALL_BREAKABLE_COLORS.append((random.randrange(0, 255), random.randrange(0, 255), random.randrange(0, 255)))
+
 SKY_COLOR = (107, 191, 255)
 GROUND_COLOR = (71, 201, 92)
 
@@ -51,10 +54,16 @@ def generate_map(map_size, noise_scale):
             else:
                 noise = opensimplex.noise2(x*noise_scale, y*noise_scale)
                 if noise > 0:
-                    noise = 2
+                    # Select colour based
+                    grid_val = 2
+                    step = 1 / len(WALL_BREAKABLE_COLORS)
+                    current = 0
+                    for i in range(len(WALL_BREAKABLE_COLORS)):
+                        if noise > (current := current + step):
+                            grid_val = 3+i
                 else:
-                    noise = 0
-                map[x].append(noise)
+                    grid_val = 0
+                map[x].append(grid_val)
 
 def render_floor_or_ceiling(*, which, light_color: pg.Color, dark_color: pg.Color):
     """Renders the floor or ceiling
@@ -117,13 +126,12 @@ def raycast(brightness=0.6):
 
         wall_height = math.floor(RAYCAST_HEIGHT / distance) * 0.5
 
-        match wall:
-            case 1:
-                base_color = WALL_UNBREAKABLE_COLOR
-            case 2:
-                base_color = WALL_BREAKABLE_COLOR
-            case _:
-                base_color = (1,1,1)
+        if wall == 1:
+            base_color = WALL_UNBREAKABLE_COLOR
+        elif wall >= 2:
+            base_color = WALL_BREAKABLE_COLORS[wall-2]
+        else:
+            base_color = (1,1,1)
 
         lit_color = tuple(n/(distance*brightness) for n in base_color)
         color = tuple(clamp(v, 0, base_color[i]) for i, v in enumerate(lit_color)) # clamp between 0 and the corrosponding base_color value
@@ -133,11 +141,11 @@ def raycast(brightness=0.6):
 
 def render_minimap(surface):
     # TODO: because colour values are being doubled, colour can't exceed 255/2. Fix this
-    pg.draw.rect(surface, tuple(clamp(v*2, 0, 255) for v in WALL_BREAKABLE_COLOR), pg.Rect(0, 0, len(map), len(map)))
+    pg.draw.rect(surface, tuple(clamp(v*2, 0, 255) for v in WALL_BREAKABLE_COLORS[0]), pg.Rect(0, 0, len(map), len(map)))
     for x in range(len(map)):
         for y in range(len(map)):
             if map[x][y] != 0:
-                pg.draw.line(surface, WALL_BREAKABLE_COLOR, (x, y), (x,y))
+                pg.draw.line(surface, WALL_BREAKABLE_COLORS[0], (x, y), (x,y))
 
     def draw_angle_line(ray_angle):
         pg.draw.circle(surface, (255, 255, 255), player.pos, 2)
