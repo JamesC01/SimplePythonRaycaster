@@ -234,7 +234,7 @@ delta_time = 1/60
 
 font = pg.font.Font(None, 32)
 
-brick_sprite = pg.image.load('textures/brick.png')
+brick_sprite = pg.image.load('textures/texture.png')
 
 # Main loop
 while True:
