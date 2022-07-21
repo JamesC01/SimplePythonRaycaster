@@ -137,11 +137,26 @@ def raycast(brightness=0.6):
         color = tuple(clamp(v, 0, base_color[i]) for i, v in enumerate(lit_color)) # clamp between 0 and the corrosponding base_color value
 
         #pg.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
-        sprite_x = int((brick_sprite.get_width()-1)*(abs(ray_pos.x-int(ray_pos.x))))
-        sprite_column_rect = pg.Rect(sprite_x, 0,
+
+        # This section is very complicated, using the DDA algorithm would make it easier.
+        ray_offsetx = abs(ray_pos.x-int(ray_pos.x))
+        ray_offsety = abs(ray_pos.y-int(ray_pos.y))
+
+        if ray_dir.x > 0 and ray_dir.y > 0:
+            ray_comparison = ray_offsetx > ray_offsety
+        else:
+            ray_comparison = ray_offsetx < ray_offsety
+
+        if ray_comparison:
+            sprite_x = int((brick_sprite.get_width()-1)*(ray_offsetx))
+            sprite_column_rect = pg.Rect(sprite_x, 0,
                               1, brick_sprite.get_height())
+        else:
+            sprite_x = int((brick_sprite.get_width()-1)*(ray_offsety))
+            sprite_column_rect = pg.Rect(sprite_x, 0,
+                              1, brick_sprite.get_height())
+
         sprite_column = brick_sprite.subsurface(sprite_column_rect)
-        
 
         raycast_surface.blit(pg.transform.scale(sprite_column, (1, wall_height*2)), (x, RAYCAST_HALF_HEIGHT - wall_height))
         ray_angle += ray_angle_increment
@@ -192,6 +207,8 @@ def render():
         # Also render FPS
         fps_text = font.render(f'FPS: {int(1/delta_time)}', False, (255, 255, 255))
         screen.blit(fps_text, (0, MINIMAP_SIZE))
+        angle_text = font.render(f'Angle: x{player.angle_xy().x:0.2} y{player.angle_xy().y:0.2}', False, (255, 255, 255))
+        screen.blit(angle_text, (0, MINIMAP_SIZE+20))
 
     # Render crosshair
     crosshair_surf = pg.Surface((screen.get_width(), screen.get_height()), pg.SRCALPHA)
