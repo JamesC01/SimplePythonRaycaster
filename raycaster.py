@@ -141,11 +141,12 @@ def raycast(brightness=0.6):
 
 def render_minimap(surface):
     # TODO: because colour values are being doubled, colour can't exceed 255/2. Fix this
-    pg.draw.rect(surface, tuple(clamp(v*2, 0, 255) for v in WALL_BREAKABLE_COLORS[0]), pg.Rect(0, 0, len(map), len(map)))
+    pg.draw.rect(surface, tuple(clamp(v/2, 0, 255) for v in GROUND_COLOR), pg.Rect(0, 0, len(map), len(map)))
     for x in range(len(map)):
         for y in range(len(map)):
             if map[x][y] != 0:
-                pg.draw.line(surface, WALL_BREAKABLE_COLORS[0], (x, y), (x,y))
+                # FIXME: not doesn't select unbreakable wall colour
+                pg.draw.line(surface, WALL_BREAKABLE_COLORS[map[x][y]-2], (x, y), (x,y))
 
     def draw_angle_line(ray_angle):
         pg.draw.circle(surface, (255, 255, 255), player.pos, 2)
