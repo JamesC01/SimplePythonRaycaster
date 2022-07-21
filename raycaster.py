@@ -4,10 +4,10 @@
 # I simplified some things in that tutorial, and now I believe I finally fully understand how
 # a raycaster works.
 
-import random
-import pygame, sys, math
-from pygame import Vector2
+import random, sys, math
 import opensimplex
+import pygame as pg
+from pygame import Vector2
 from player import Player
 #from pygame.math import clamp # waiting for next pygame release
 
@@ -55,7 +55,7 @@ def generate_map(map_size, noise_scale):
                     noise = 0
                 map[x].append(noise)
 
-def render_floor_or_ceiling(*, which, light_color: pygame.Color, dark_color: pygame.Color):
+def render_floor_or_ceiling(*, which, light_color: pg.Color, dark_color: pg.Color):
     which = which.lower()
     if which == 'ceiling':
         draw_range = range(0, RAYCAST_HALF_HEIGHT)
@@ -73,7 +73,7 @@ def render_floor_or_ceiling(*, which, light_color: pygame.Color, dark_color: pyg
     for y in draw_range:
         color = start_color.lerp(end_color, clamp((y-offset)/draw_range.stop, 0, 1))
 
-        pygame.draw.line(raycast_surface, tuple(color), (0, y), (RAYCAST_WIDTH, y))
+        pg.draw.line(raycast_surface, tuple(color), (0, y), (RAYCAST_WIDTH, y))
 
 
 def raycast(brightness=0.6):
@@ -110,24 +110,24 @@ def raycast(brightness=0.6):
         lit_color = tuple(n/(distance*brightness) for n in base_color)
         color = tuple(clamp(v, 0, base_color[i]) for i, v in enumerate(lit_color)) # clamp between 0 and the corrosponding base_color value
 
-        pygame.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
+        pg.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
         ray_angle += ray_angle_increment
 
 def render_minimap(surface):
     # TODO: because colour values are being doubled, colour can't exceed 255/2. Fix this
-    pygame.draw.rect(surface, tuple(clamp(v*2, 0, 255) for v in WALL_BREAKABLE_COLOR), pygame.Rect(0, 0, len(map), len(map)))
+    pg.draw.rect(surface, tuple(clamp(v*2, 0, 255) for v in WALL_BREAKABLE_COLOR), pg.Rect(0, 0, len(map), len(map)))
     for x in range(len(map)):
         for y in range(len(map)):
             if map[x][y] != 0:
-                pygame.draw.line(surface, WALL_BREAKABLE_COLOR, (x, y), (x,y))
+                pg.draw.line(surface, WALL_BREAKABLE_COLOR, (x, y), (x,y))
 
     def draw_angle_line(ray_angle):
-        pygame.draw.circle(surface, (255, 255, 255), player.pos, 2)
+        pg.draw.circle(surface, (255, 255, 255), player.pos, 2)
         ray_angle = Vector2(
             math.cos(math.radians(ray_angle)),
             math.sin(math.radians(ray_angle))
         ) * 50
-        pygame.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_angle)
+        pg.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_angle)
 
     draw_angle_line(player.angle - Player.HALF_FOV)
     draw_angle_line(player.angle + Player.HALF_FOV)
@@ -143,34 +143,36 @@ def break_wall():
         map[int(ray.x)][int(ray.y)] = 0
 
 def render():
-    render_floor_or_ceiling(which='ceiling', light_color=pygame.Color(SKY_COLOR), dark_color=pygame.Color(0,0,0))
-    render_floor_or_ceiling(which='floor', light_color=pygame.Color(GROUND_COLOR), dark_color=pygame.Color(0,0,0))
+    render_floor_or_ceiling(which='ceiling', light_color=pg.Color(SKY_COLOR), dark_color=pg.Color(0,0,0))
+    render_floor_or_ceiling(which='floor', light_color=pg.Color(GROUND_COLOR), dark_color=pg.Color(0,0,0))
     raycast()
 
-    screen.blit(pygame.transform.scale(raycast_surface, (screen.get_width(), screen.get_height())), (0, 0))
+    screen.blit(pg.transform.scale(raycast_surface, (screen.get_width(), screen.get_height())), (0, 0))
 
     if show_minimap:
         # Render minimap
-        minimap_surf = pygame.Surface((100, 100))
+        minimap_surf = pg.Surface((100, 100))
         render_minimap(minimap_surf)
-        screen.blit(pygame.transform.scale(minimap_surf, (MINIMAP_SIZE, MINIMAP_SIZE)), (0, 0))
+        screen.blit(pg.transform.scale(minimap_surf, (MINIMAP_SIZE, MINIMAP_SIZE)), (0, 0))
 
         # Also render FPS
         fps_text = font.render(f'FPS: {int(1/delta_time)}', False, (255, 255, 255))
         screen.blit(fps_text, (0, MINIMAP_SIZE))
 
     # Render crosshair
-    crosshair_surf = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
-    pygame.draw.circle(crosshair_surf, pygame.Color(255, 255, 255, 70), (screen.get_width()/2, screen.get_height()/2), 5, )
+    crosshair_surf = pg.Surface((screen.get_width(), screen.get_height()), pg.SRCALPHA)
+    pg.draw.circle(crosshair_surf, pg.Color(255, 255, 255, 70), (screen.get_width()/2, screen.get_height()/2), 5, )
     screen.blit(crosshair_surf, (0,0))
 
 # TODO: Refactor code (make functions less coupled to global vars)
 #       Make functions take color values/find a better way to deal with
 #       colours. Also, just generally polish the code a bit.
+#       Enable a max raycast distance to save performance (try to make it look
+#       nicer than walls just popping in)
 
-pygame.init()
-raycast_surface = pygame.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
-screen = pygame.display.set_mode((960, 720))
+pg.init()
+raycast_surface = pg.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
+screen = pg.display.set_mode((960, 720))
 
 player = Player()
 generate_map(100, 0.2)
@@ -178,23 +180,23 @@ show_minimap = True
 
 delta_time = 1/60
 
-font = pygame.font.Font(None, 32)
+font = pg.font.Font(None, 32)
 
 while True:
-    loop_start_time = pygame.time.get_ticks()/1000
+    loop_start_time = pg.time.get_ticks()/1000
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
             sys.exit()
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_m:
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_m:
                 show_minimap = not show_minimap
-            elif event.key == pygame.K_SPACE:
+            elif event.key == pg.K_SPACE:
                     break_wall()
 
     player.update(delta_time, map)
 
     render()
-    pygame.display.flip()
+    pg.display.flip()
 
-    delta_time = pygame.time.get_ticks()/1000 - loop_start_time
+    delta_time = pg.time.get_ticks()/1000 - loop_start_time
