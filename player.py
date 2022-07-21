@@ -24,16 +24,14 @@ class Player:
 
         # Move
         if keys[pg.K_UP]:
-            dest = self.pos + self.angle_xy() * Player.SPEED * delta
-            if map[int(dest.x)][int(dest.y)] == 0:
-                self.pos = dest
+            self.try_move_along_angle(delta, map, 1)
+
         if keys[pg.K_DOWN]:
-            dest = self.pos - self.angle_xy() * Player.SPEED * delta
-            if map[int(dest.x)][int(dest.y)] == 0:
-                    self.pos = dest
+            self.try_move_along_angle(delta, map, -1)
+
 
         if keys[pg.K_LALT] or keys[pg.K_RALT]:
-            right = -Vector2(self.angle_xy(), -self.angle_xy())
+            right = -Vector2(self.angle_xy().y, -self.angle_xy().x)
             # Strafe
             if keys[pg.K_LEFT]:
                 self.pos -= right * Player.SPEED * delta
@@ -45,3 +43,24 @@ class Player:
                 self.angle -= Player.ROTATE_SPEED * delta
             if keys[pg.K_RIGHT]:
                 self.angle += Player.ROTATE_SPEED * delta
+
+    def try_move_along_angle(self, delta, map, dir):
+        """Attempts to move the player along its forward angle.
+
+            Arguments:
+            delta -- delta time
+            map -- the map to check for collisions.
+            dir -- -1 or 1, corrosponding to back and forward"""
+        if dir != -1 and dir != 1:
+            raise ValueError('dir needs to be 1 or -1')
+
+        xmotion = self.angle_xy().x * Player.SPEED * delta
+        xmotion *= dir
+        if map[int(self.pos.x+xmotion)][int(self.pos.y)] == 0:
+            self.pos.x += xmotion
+
+        ymotion = self.angle_xy().y * Player.SPEED * delta
+        ymotion *= dir
+        if map[int(self.pos.x)][int(self.pos.y+ymotion)] == 0:
+            self.pos.y += ymotion
+
