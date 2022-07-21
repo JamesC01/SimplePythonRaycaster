@@ -41,6 +41,7 @@ def generate_map(map_size, noise_scale):
         Arguments:
         map_size -- The width and height of the list
         noise_scale -- the scale of the simplex noise (smaller values mean bigger noise)"""
+
     opensimplex.seed(random.randrange(999999999))
     for x in range(map_size):
         map.append([])
@@ -56,27 +57,38 @@ def generate_map(map_size, noise_scale):
                 map[x].append(noise)
 
 def render_floor_or_ceiling(*, which, light_color: pg.Color, dark_color: pg.Color):
+    """Renders the floor or ceiling
+
+        Arguments:
+        which -- Either 'ceiling' or 'floor'
+        light_color -- the lightest color of the ceiling or floor
+        dark_color -- the darkest color of the ceiling or floor"""
+
     which = which.lower()
     if which == 'ceiling':
         draw_range = range(0, RAYCAST_HALF_HEIGHT)
         start_color = light_color
         end_color = dark_color
-        offset = 0
+        yoffset = 0
     elif which == 'floor':
         draw_range = range(RAYCAST_HALF_HEIGHT, RAYCAST_HEIGHT)
         start_color = dark_color
         end_color = light_color
-        offset = RAYCAST_HALF_HEIGHT
+        yoffset = RAYCAST_HALF_HEIGHT
     else:
         raise Exception('Error: invalid option for which. Has to be \'ceiling\' or \'floor\'')
 
     for y in draw_range:
-        color = start_color.lerp(end_color, clamp((y-offset)/draw_range.stop, 0, 1))
+        color = start_color.lerp(end_color, clamp((y-yoffset)/draw_range.stop, 0, 1))
 
         pg.draw.line(raycast_surface, tuple(color), (0, y), (RAYCAST_WIDTH, y))
 
 
 def raycast(brightness=0.6):
+    """Raycast rendering
+
+        Arguments:
+        brightness -- the intensity of the lighting (smaller values make light brighter.)"""
     ray_angle = player.angle - Player.HALF_FOV
     for x in range(0, RAYCAST_WIDTH):
         ray_pos = player.pos.copy()
@@ -170,6 +182,7 @@ def render():
 #       Enable a max raycast distance to save performance (try to make it look
 #       nicer than walls just popping in)
 
+# Initialization
 pg.init()
 raycast_surface = pg.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
 screen = pg.display.set_mode((960, 720))
@@ -182,6 +195,7 @@ delta_time = 1/60
 
 font = pg.font.Font(None, 32)
 
+# Main loop
 while True:
     loop_start_time = pg.time.get_ticks()/1000
 
