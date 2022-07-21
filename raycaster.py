@@ -136,7 +136,14 @@ def raycast(brightness=0.6):
         lit_color = tuple(n/(distance*brightness) for n in base_color)
         color = tuple(clamp(v, 0, base_color[i]) for i, v in enumerate(lit_color)) # clamp between 0 and the corrosponding base_color value
 
-        pg.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
+        #pg.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
+        sprite_x = int((brick_sprite.get_width()-1)*(abs(ray_pos.x-int(ray_pos.x))))
+        sprite_column_rect = pg.Rect(sprite_x, 0,
+                              1, brick_sprite.get_height())
+        sprite_column = brick_sprite.subsurface(sprite_column_rect)
+        
+
+        raycast_surface.blit(pg.transform.scale(sprite_column, (1, wall_height*2)), (x, RAYCAST_HALF_HEIGHT - wall_height))
         ray_angle += ray_angle_increment
 
 def render_minimap(surface):
@@ -209,6 +216,8 @@ show_minimap = True
 delta_time = 1/60
 
 font = pg.font.Font(None, 32)
+
+brick_sprite = pg.image.load('textures/brick.png')
 
 # Main loop
 while True:
