@@ -109,6 +109,12 @@ def raycast(brightness=0.6):
         ray_length_xy = player.pos - ray_pos
         distance = ray_length_xy.length()
 
+        # solve fisheye effect (rays near to edge of fov need to go further, so
+        # you scale them by cos(rayangle/playerangle) to scale them to the same
+        # length that they would be, had they been cast from the playerangle.
+        distance *= math.cos(math.radians(ray_angle)-math.radians(player.angle))
+
+
         wall_height = math.floor(RAYCAST_HEIGHT / distance) * 0.5
 
         match wall:
