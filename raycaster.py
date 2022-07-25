@@ -54,13 +54,7 @@ def generate_map(map_size, noise_scale):
             else:
                 noise = opensimplex.noise2(x*noise_scale, y*noise_scale)
                 if noise > 0:
-                    # Select colour based
-                    grid_val = 2
-                    step = 1 / len(WALL_BREAKABLE_COLORS)
-                    current = 0
-                    for i in range(len(WALL_BREAKABLE_COLORS)):
-                        if noise > (current := current + step):
-                            grid_val = 3+i
+                    grid_val = 2 + random.randrange(len(WALL_BREAKABLE_COLORS))
                 else:
                     grid_val = 0
                 map[x].append(grid_val)
@@ -123,42 +117,41 @@ def raycast(brightness=0.6):
         # length that they would be, had they been cast from the playerangle.
         distance *= math.cos(math.radians(ray_angle)-math.radians(player.angle))
 
-
         wall_height = math.floor(RAYCAST_HEIGHT / distance) * 0.5
 
         if wall == 1:
             base_color = WALL_UNBREAKABLE_COLOR
         elif wall >= 2:
             base_color = WALL_BREAKABLE_COLORS[wall-2]
-        else:
-            base_color = (1,1,1)
 
         lit_color = tuple(n/(distance*brightness) for n in base_color)
         color = tuple(clamp(v, 0, base_color[i]) for i, v in enumerate(lit_color)) # clamp between 0 and the corrosponding base_color value
 
-        #pg.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
+        pg.draw.line(raycast_surface, color, (x, RAYCAST_HALF_HEIGHT - wall_height), (x, RAYCAST_HALF_HEIGHT + wall_height))
 
+        # Texture rendering
         # This section is very complicated, using the DDA algorithm would make it easier.
-        ray_offsetx = abs(ray_pos.x-int(ray_pos.x))
-        ray_offsety = abs(ray_pos.y-int(ray_pos.y))
+        # ray_offsetx = abs(ray_pos.x-int(ray_pos.x))
+        # ray_offsety = abs(ray_pos.y-int(ray_pos.y))
 
-        if ray_dir.x > 0 and ray_dir.y > 0:
-            ray_comparison = ray_offsetx > ray_offsety
-        else:
-            ray_comparison = ray_offsetx < ray_offsety
+        # if ray_dir.x > 0 and ray_dir.y > 0:
+        #     ray_comparison = ray_offsetx > ray_offsety
+        # else:
+        #     ray_comparison = ray_offsetx < ray_offsety
 
-        if ray_comparison:
-            sprite_x = int((brick_sprite.get_width()-1)*(ray_offsetx))
-            sprite_column_rect = pg.Rect(sprite_x, 0,
-                              1, brick_sprite.get_height())
-        else:
-            sprite_x = int((brick_sprite.get_width()-1)*(ray_offsety))
-            sprite_column_rect = pg.Rect(sprite_x, 0,
-                              1, brick_sprite.get_height())
+        # if ray_comparison:
+        #     sprite_x = int((brick_sprite.get_width()-1)*(ray_offsetx))
+        #     sprite_column_rect = pg.Rect(sprite_x, 0,
+        #                       1, brick_sprite.get_height())
+        # else:
+        #     sprite_x = int((brick_sprite.get_width()-1)*(ray_offsety))
+        #     sprite_column_rect = pg.Rect(sprite_x, 0,
+        #                       1, brick_sprite.get_height())
 
-        sprite_column = brick_sprite.subsurface(sprite_column_rect)
+        # sprite_column = brick_sprite.subsurface(sprite_column_rect)
 
-        raycast_surface.blit(pg.transform.scale(sprite_column, (1, wall_height*2)), (x, RAYCAST_HALF_HEIGHT - wall_height))
+        # #raycast_surface.blit(pg.transform.scale(sprite_column, (1, wall_height*2)), (x, RAYCAST_HALF_HEIGHT - wall_height))
+
         ray_angle += ray_angle_increment
 
 def render_minimap(surface):
@@ -234,7 +227,7 @@ delta_time = 1/60
 
 font = pg.font.Font(None, 32)
 
-brick_sprite = pg.image.load('textures/texture.png')
+brick_sprite = pg.image.load('textures/texture.jpeg')
 
 # Main loop
 while True:
