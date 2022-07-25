@@ -21,5 +21,8 @@ Submit an issue if this project doesn't work with the latest versions of these l
 * [PyGame](https://pypi.org/project/pygame/)
 * [opensimplex](https://pypi.org/project/opensimplex/)
 
+Alternatively, you can install the libraries using:
+`python -m pip install -r requirements.txt`
+
 ## Contributing
 I don't plan on accepting pull requests, this is a small personal project.
