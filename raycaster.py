@@ -12,6 +12,7 @@ import opensimplex
 import pygame as pg
 from pygame import Vector2
 from player import Player
+import utils
 # from pygame.math import clamp # waiting for next pygame release (hopefully)
 
 
@@ -100,8 +101,8 @@ def raycast(brightness=0.6):
     """Raycast rendering
 
         Arguments:
-        brightness -- the intensity of the lighting (smaller values make light\
- brighter.)"""
+        brightness -- the intensity of the lighting (smaller values make \
+light brighter.)"""
     ray_angle = player.angle - Player.HALF_FOV
     for x in range(0, RAYCAST_WIDTH):
         ray_pos = player.pos.copy()
@@ -176,29 +177,28 @@ def raycast(brightness=0.6):
 
 
 def render_minimap(surface):
-    # TODO: because colour values are being doubled, colour can't exceed
-    # 255/2. Fix this.
+    # Draw minimap background
     pg.draw.rect(surface, tuple(clamp(v/2, 0, 255) for v in GROUND_COLOR),
                  pg.Rect(0, 0, len(map), len(map)))
 
+    # Draw minimap tiles
     for x in range(len(map)):
         for y in range(len(map)):
-            if map[x][y] != 0:
-                # FIXME: not doesn't select unbreakable wall colour
+            if map[x][y] == 1:
+                pg.draw.line(surface, WALL_UNBREAKABLE_COLOR,
+                             (x, y), (x, y))
+            elif map[x][y] >= 2:
                 pg.draw.line(surface, WALL_BREAKABLE_COLORS[map[x][y]-2],
                              (x, y), (x, y))
 
-    def draw_angle_line(ray_angle):
-        pg.draw.circle(surface, (255, 255, 255), player.pos, 2)
-        ray_angle = Vector2(
-            math.cos(math.radians(ray_angle)),
-            math.sin(math.radians(ray_angle))
-        ) * 50
-        pg.draw.line(surface, (255, 255, 255), player.pos,
-                     player.pos+ray_angle)
+    # Draw player position as circle
+    pg.draw.circle(surface, (255, 255, 255), player.pos, 2)
 
-    draw_angle_line(player.angle - Player.HALF_FOV)
-    draw_angle_line(player.angle + Player.HALF_FOV)
+    # Draw player FOV lines
+    ray_angle = utils.degrees_to_vec2(player.angle - Player.HALF_FOV) * 50
+    pg.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_angle)
+    ray_angle = ray_angle.rotate(Player.FOV)
+    pg.draw.line(surface, (255, 255, 255), player.pos, player.pos+ray_angle)
 
 
 def break_wall():
@@ -266,8 +266,8 @@ show_minimap = True
 delta_time = 1/60
 
 font = pg.font.Font(None, 32)
-
 brick_sprite = pg.image.load('textures/texture.jpeg')
+
 
 # Main loop
 while True:
@@ -287,4 +287,4 @@ while True:
     render()
     pg.display.flip()
 
-    delta_time = pg.time.get_ticks()/1000 - loop_start_time
+    delta_time = pg.time.get_ticks() / 1000 - loop_start_time

@@ -2,6 +2,7 @@ import pygame as pg
 import math
 from pygame import Vector2
 
+
 class Player:
     FOV = 70
     HALF_FOV = FOV/2
@@ -28,7 +29,6 @@ class Player:
 
         if keys[pg.K_DOWN]:
             self.try_move_along_angle(delta, map, -1)
-
 
         if keys[pg.K_LALT] or keys[pg.K_RALT]:
             right = -Vector2(self.angle_xy().y, -self.angle_xy().x)
@@ -63,4 +63,3 @@ class Player:
         ymotion *= dir
         if map[int(self.pos.x)][int(self.pos.y+ymotion)] == 0:
             self.pos.y += ymotion
-
