@@ -17,7 +17,12 @@ import utils
 
 
 def clamp(val, minval, maxval):
-    return min(max(minval, val), maxval)
+    if val < minval:
+        return minval
+    elif val > maxval:
+        return maxval
+    else:
+        return val
 
 
 # Colour constants
