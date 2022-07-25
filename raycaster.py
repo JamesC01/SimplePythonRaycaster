@@ -69,23 +69,15 @@ def render_floor_or_ceiling(*, which, light_color: pg.Color, dark_color: pg.Colo
 
     which = which.lower()
     if which == 'ceiling':
-        draw_range = range(0, RAYCAST_HALF_HEIGHT)
-        start_color = light_color
-        end_color = dark_color
-        yoffset = 0
+        for y in range(0, RAYCAST_HALF_HEIGHT):
+            color = light_color.lerp(dark_color, y/RAYCAST_HALF_HEIGHT)
+            pg.draw.line(raycast_surface, color, (0, y), (RAYCAST_WIDTH, y))
     elif which == 'floor':
-        draw_range = range(RAYCAST_HALF_HEIGHT, RAYCAST_HEIGHT)
-        start_color = dark_color
-        end_color = light_color
-        yoffset = RAYCAST_HALF_HEIGHT
+        for y in range(RAYCAST_HALF_HEIGHT, RAYCAST_HEIGHT):
+            color = dark_color.lerp(light_color, (y-RAYCAST_HALF_HEIGHT)/RAYCAST_HALF_HEIGHT)
+            pg.draw.line(raycast_surface, color, (0, y), (RAYCAST_WIDTH, y))
     else:
         raise Exception('Error: invalid option for which. Has to be \'ceiling\' or \'floor\'')
-
-    for y in draw_range:
-        color = start_color.lerp(end_color, clamp((y-yoffset)/draw_range.stop, 0, 1))
-
-        pg.draw.line(raycast_surface, tuple(color), (0, y), (RAYCAST_WIDTH, y))
-
 
 def raycast(brightness=0.6):
     """Raycast rendering
