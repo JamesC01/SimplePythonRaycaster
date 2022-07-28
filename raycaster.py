@@ -163,6 +163,9 @@ light brighter.)"""
         elif wall >= 2:
             base_color = WALL_BREAKABLE_COLORS[wall-2]
 
+        if side == 1:
+            base_color = tuple(n/1.5 for n in base_color)
+
         lit_color = tuple(n/(distance*brightness) for n in base_color)
         # clamp between 0 and the corrosponding base_color value
         color = tuple(
@@ -254,6 +257,7 @@ def render():
 #       Enable a max raycast distance to save performance (try to make it look
 #       nicer than walls just popping in)
 
+
 # Initialization
 pg.init()
 raycast_surface = pg.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
@@ -262,6 +266,7 @@ screen = pg.display.set_mode((960, 720))
 generate_map(100, 0.2)
 show_minimap = True
 
+# Find empty map spot and spawn player there.
 for x in range(1, len(map)):
     for y in range(1, len(map[0])):
         if map[x][y] == 0:
