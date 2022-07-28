@@ -259,9 +259,13 @@ pg.init()
 raycast_surface = pg.surface.Surface((RAYCAST_WIDTH, RAYCAST_HEIGHT))
 screen = pg.display.set_mode((960, 720))
 
-player = Player()
 generate_map(100, 0.2)
 show_minimap = True
+
+for x in range(1, len(map)):
+    for y in range(1, len(map[0])):
+        if map[x][y] == 0:
+            player = Player(Vector2(x, y))
 
 delta_time = 1/60
 
