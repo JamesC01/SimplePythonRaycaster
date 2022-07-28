@@ -13,17 +13,8 @@ import pygame as pg
 from pygame import Vector2
 from player import Player
 import utils
+from utils import clamp
 # from pygame.math import clamp # waiting for next pygame release (hopefully)
-
-
-def clamp(val, minval, maxval):
-    if val < minval:
-        return minval
-    elif val > maxval:
-        return maxval
-    else:
-        return val
-
 
 # Colour constants
 WALL_UNBREAKABLE_COLOR = (100, 100, 100)
@@ -115,18 +106,48 @@ light brighter.)"""
         ray_dir = Vector2(math.cos(math.radians(ray_angle)),
                           math.sin(math.radians(ray_angle))).normalize()
 
-        # Keep moving rayPos along rayDir until it hits a wall
-        # NOTE: Because of the way python lists work, if a ray
-        # goes in the negative direction, it will wrap around
-        # to the end of the list. So the world will loop once.
-        # pretty cool bug.
-        wall = 0
-        while(wall == 0):
-            ray_pos += ray_dir * ray_precision
-            wall = map[int(ray_pos.x)][int(ray_pos.y)]
+        map_pos = Vector2(
+            int(ray_pos.x),
+            int(ray_pos.y)
+        )
 
-        ray_length_xy = player.pos - ray_pos
-        distance = ray_length_xy.length()
+        xlength = abs(1 / math.cos(math.radians(ray_angle)))
+        ylength = abs(1 / math.sin(math.radians(ray_angle)))
+
+        if ray_dir.x < 0:
+            xdir = -1
+            xdist = (ray_pos.x - map_pos.x) * xlength
+        else:
+            xdir = 1
+            # TODO: Figure out why it needs to be map_pos + 1 - ray_pos
+            xdist = (map_pos.x + 1.0 - ray_pos.x) * xlength
+
+        if ray_dir.y < 0:
+            ydir = -1
+            ydist = (ray_pos.y - map_pos.y) * ylength
+        else:
+            ydir = 1
+            ydist = (map_pos.y + 1.0 - ray_pos.y) * ylength
+
+        wall = 0
+        side = 0
+        while(wall == 0):
+            if xdist < ydist:
+                xdist += xlength
+                side = 0
+                map_pos.x += xdir
+            else:
+                ydist += ylength
+                side = 1
+                map_pos.y += ydir
+
+            wall = map[int(map_pos.x)][int(map_pos.y)]
+
+        if side == 0:
+            # TODO: Figure out on paper why you need to subtract xlength
+            distance = xdist - xlength
+        else:
+            distance = ydist - ylength
 
         # solve fisheye effect (rays near to edge of fov need to go further, so
         # you scale them by cos(rayangle/playerangle) to scale them to the same
@@ -151,32 +172,6 @@ light brighter.)"""
         pg.draw.line(raycast_surface, color,
                      (x, RAYCAST_HALF_HEIGHT - wall_height),
                      (x, RAYCAST_HALF_HEIGHT + wall_height))
-
-        # Texture rendering
-        # This section is very complicated, using the DDA algorithm would make
-        # it easier.
-        # ray_offsetx = abs(ray_pos.x-int(ray_pos.x))
-        # ray_offsety = abs(ray_pos.y-int(ray_pos.y))
-
-        # if ray_dir.x > 0 and ray_dir.y > 0:
-        #     ray_comparison = ray_offsetx > ray_offsety
-        # else:
-        #     ray_comparison = ray_offsetx < ray_offsety
-
-        # if ray_comparison:
-        #     sprite_x = int((brick_sprite.get_width()-1)*(ray_offsetx))
-        #     sprite_column_rect = pg.Rect(sprite_x, 0,
-        #                       1, brick_sprite.get_height())
-        # else:
-        #     sprite_x = int((brick_sprite.get_width()-1)*(ray_offsety))
-        #     sprite_column_rect = pg.Rect(sprite_x, 0,
-        #                       1, brick_sprite.get_height())
-
-        # sprite_column = brick_sprite.subsurface(sprite_column_rect)
-
-        # raycast_surface.blit(
-        #     pg.transform.scale(sprite_column, (1, wall_height*2)),
-        #     (x, RAYCAST_HALF_HEIGHT - wall_height))
 
         ray_angle += ray_angle_increment
 
